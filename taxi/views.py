@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.views import generic
+from django.views import generic, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import DriverLicenseUpdateForm, CarForm, DriverCreateForm
@@ -106,17 +106,22 @@ class DriverLicenseUpdateView(LoginRequiredMixin, generic.UpdateView):
     form_class = DriverLicenseUpdateForm
 
 
-@login_required
-def assign_to_car(request, pk):
-    car = Car.objects.get(pk=pk)
-    if request.method == "POST":
-        car.drivers.add(request.user)
-    return redirect("taxi:car-detail", pk=car.id)
+class ManageCarDriverView(LoginRequiredMixin, generic.UpdateView):
+    model = Car
+    fields = []
+
+    def post(self, request, *args, **kwargs):
+        car = Car.objects.get(pk=kwargs["pk"])
+        action = request.POST.get('action')
+
+        if action == 'add' and request.user not in car.drivers.all():
+            car.drivers.add(request.user)
+        elif action == 'remove' and request.user in car.drivers.all():
+            car.drivers.remove(request.user)
+
+        car.save()
+
+        return redirect("taxi:car-detail", pk=car.pk)
 
 
-@login_required
-def remove_from_car(request, pk):
-    car = Car.objects.get(pk=pk)
-    if request.method == "POST":
-        car.drivers.remove(request.user)
-        return redirect("taxi:car-detail", pk=pk)
+
