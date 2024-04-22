@@ -112,16 +112,13 @@ class ManageCarDriverView(LoginRequiredMixin, generic.UpdateView):
 
     def post(self, request, *args, **kwargs):
         car = Car.objects.get(pk=kwargs["pk"])
-        action = request.POST.get('action')
+        action = request.POST.get("action")
 
-        if action == 'add' and request.user not in car.drivers.all():
+        if action == "add" and request.user not in car.drivers.all():
             car.drivers.add(request.user)
-        elif action == 'remove' and request.user in car.drivers.all():
+        elif action == "remove" and request.user in car.drivers.all():
             car.drivers.remove(request.user)
 
         car.save()
 
         return redirect("taxi:car-detail", pk=car.pk)
-
-
-
